@@ -6,6 +6,7 @@ use Closure;
 use ReflectionMethod;
 use ReflectionFunction;
 use InvalidArgumentException;
+use Illuminate\Contracts\Container\BindingResolutionException;
 
 class BoundMethod
 {
@@ -116,7 +117,7 @@ class BoundMethod
             static::addDependencyForCallParameter($container, $parameter, $parameters, $dependencies);
         }
 
-        return array_merge($dependencies, $parameters);
+        return $dependencies;
     }
 
     /**
@@ -156,6 +157,11 @@ class BoundMethod
             $dependencies[] = $container->make($parameter->getClass()->name);
         } elseif ($parameter->isDefaultValueAvailable()) {
             $dependencies[] = $parameter->getDefaultValue();
+        } elseif (is_numeric(key($parameters))) {
+            $dependencies[] = array_shift($parameters);
+        } else {
+            $message = "Unresolvable dependency resolving [$parameter]";
+            throw new BindingResolutionException($message);
         }
     }
 
